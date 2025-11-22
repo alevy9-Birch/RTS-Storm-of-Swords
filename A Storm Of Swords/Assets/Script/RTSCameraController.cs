@@ -31,6 +31,7 @@ public class RTSCameraController : MonoBehaviour
     public Texture2D cursorArrowLeft;
     public Texture2D cursorArrowRight;
 
+    public Vector2 mapBounds;
     CursorArrow currentCursor = CursorArrow.DEFAULT;
     enum CursorArrow
     {
@@ -67,6 +68,8 @@ public class RTSCameraController : MonoBehaviour
         {
             followTransform = null;
         }
+
+        transform.position = new Vector3(Mathf.Clamp(transform.position.x, -mapBounds.x, mapBounds.x), transform.position.y, Mathf.Clamp(transform.position.z, -mapBounds.y, mapBounds.y));
     }
 
     void HandleCameraMovement()
@@ -154,7 +157,7 @@ public class RTSCameraController : MonoBehaviour
 
         transform.position = Vector3.Lerp(transform.position, newPosition, Time.deltaTime * movementSensitivity);
 
-        Cursor.lockState = CursorLockMode.Locked; // If we have an extra monitor we don't want to exit screen bounds
+        Cursor.lockState = CursorLockMode.Confined; // If we have an extra monitor we don't want to exit screen bounds
     }
 
     private void ChangeCursor(CursorArrow newCursor)
@@ -165,19 +168,19 @@ public class RTSCameraController : MonoBehaviour
             switch (newCursor)
             {
                 case CursorArrow.UP:
-                    Cursor.SetCursor(cursorArrowUp, Vector2.zero, CursorMode.Auto);
+                    Cursor.SetCursor(cursorArrowUp, new Vector2(cursorArrowUp.width, cursorArrowUp.height), CursorMode.Auto);
                     break;
                 case CursorArrow.DOWN:
                     Cursor.SetCursor(cursorArrowDown, new Vector2(cursorArrowDown.width, cursorArrowDown.height), CursorMode.Auto);
                     break;
                 case CursorArrow.LEFT:
-                    Cursor.SetCursor(cursorArrowLeft, Vector2.zero, CursorMode.Auto);
+                    Cursor.SetCursor(cursorArrowLeft, new Vector2(cursorArrowLeft.width, cursorArrowLeft.height), CursorMode.Auto);
                     break;
                 case CursorArrow.RIGHT:
                     Cursor.SetCursor(cursorArrowRight, new Vector2(cursorArrowRight.width, cursorArrowRight.height), CursorMode.Auto);
                     break;
                 case CursorArrow.DEFAULT:
-                    Cursor.SetCursor(cursorDefaultArrow, Vector2.zero, CursorMode.Auto);
+                    Cursor.SetCursor(cursorDefaultArrow, Vector2.one * 64, CursorMode.Auto);
                     break;
             }
 
@@ -215,5 +218,12 @@ public class RTSCameraController : MonoBehaviour
                 newPosition = transform.position + dragStartPosition - dragCurrentPosition;
             }
         }
+    }
+
+    private void OnDrawGizmos()
+    {
+        float mapHeight = 100;
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireCube(Vector3.up * mapHeight/2, new Vector3(mapBounds.x, mapHeight, mapBounds.y));
     }
 }

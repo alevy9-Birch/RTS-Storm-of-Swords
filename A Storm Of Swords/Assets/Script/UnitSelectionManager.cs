@@ -1,12 +1,10 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class UnitSelectionManager : MonoBehaviour
 {
-    public static UnitSelectionManager Instance { get; set; }
+    public static UnitSelectionManager LocalInstance { get; set; }
 
-    public List<GameObject> allUnitsList = new List<GameObject>();
     public List<GameObject> unitsSelected = new List<GameObject>();
 
     public LayerMask ground;
@@ -14,30 +12,28 @@ public class UnitSelectionManager : MonoBehaviour
 
     private Camera cam;
 
-    public int[] controlledFactions = new int[] { 0 };
-    public int[] neutralFactions = new int[] {};
-    public int[] enemyFactions = new int[] { 1 };
+    [Range(0, UnitManager.maxPlayers)]
+    public byte myID;
 
     [SerializeField]
     RectTransform boxVisual;
 
     Rect selectionBox;
 
+    Vector3 worldStartPos;
     Vector2 startPosition;
     Vector2 endPosition;
-
-    float startTime;
 
 
     public void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (LocalInstance != null && LocalInstance != this)
         {
             Destroy(this.gameObject);
         }
         else
         {
-            Instance = this;
+            LocalInstance = this;
         }
     }
 
@@ -53,11 +49,17 @@ public class UnitSelectionManager : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
-            startPosition = Input.mousePosition;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            if (Physics.Raycast(ray, out hit, Mathf.Infinity, ground))
+            {
+                worldStartPos = hit.point;
+            }
         }
 
         if (Input.GetMouseButton(0))
         {
+            startPosition = Camera.main.WorldToScreenPoint(worldStartPos);
             endPosition = Input.mousePosition;
             DrawVisual();
             DrawSelection();
@@ -209,14 +211,16 @@ public class UnitSelectionManager : MonoBehaviour
     {
         if (!Input.GetKey(KeyCode.LeftShift))
         {
-            UnitSelectionManager.Instance.DeselectAll();
+            UnitSelectionManager.LocalInstance.DeselectAll();
         }
 
-        foreach (GameObject unit in UnitSelectionManager.Instance.allUnitsList)
+        foreach (GameObject unit in UnitManager.Instance.allUnits)
         {
+            if (unit.GetComponent<Selectable>().teamID != myID)
+                continue;
             if (selectionBox.Contains(cam.WorldToScreenPoint(unit.transform.position)))
             {
-                UnitSelectionManager.Instance.DragSelect(unit);
+                UnitSelectionManager.LocalInstance.DragSelect(unit);
             }
         }
     }

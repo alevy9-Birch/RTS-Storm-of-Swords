@@ -1,18 +1,45 @@
+using System;
+using System.Collections;
 using UnityEngine;
 
-public abstract class Command : MonoBehaviour
+public class Command : ScriptableObject
 {
     public string abilityName;
-    public Selectable selectable;
+    protected Selectable selectable;
+    protected bool interuptable = true;
 
-    public void Start()
+
+    public void CommandInitialize(Selectable unit)
     {
-        selectable = gameObject.GetComponent<Selectable>();
-        selectable.AddCommand(abilityName, this);
-
-        CommandInitialize();
+        selectable = unit;
     }
 
-    protected virtual void CommandInitialize() { }
-    public abstract bool Execute();
+    public virtual bool Execute() //Called Every Frame it Runs
+    {
+        return true;
+    }
+
+    public virtual bool SetUp()
+    {
+        return true;
+    }
+
+    public bool CanBeInterupted()
+    {
+        return interuptable;
+    }
+
+    public virtual Command Duplicate()
+    {
+        Command copy = (Command)Activator.CreateInstance(this.GetType());
+        CopyTo(copy);
+        return copy;
+    }
+
+    protected virtual void CopyTo(Command copy)
+    {
+        copy.abilityName = abilityName;
+        copy.selectable = selectable;
+        copy.interuptable = interuptable;
+    }
 }

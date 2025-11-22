@@ -7,62 +7,81 @@ public abstract class Selectable : MonoBehaviour
 {
     public short teamNum;
 
+    [SerializeField]
+    public List<Command> commands = new List<Command>();
+    protected Dictionary<string, Command> commandsDict = new();
     public Queue<Command> queue = new();
     private Command activeCommand;
     protected Selectable selectable;
 
-    public Dictionary<string, Command> commands = new();
-
     protected InputManager inputManager;
+    public Byte teamID;
 
     //Start & Update
 
-    protected void Start()
+    protected virtual void Start()
     {
-        UnitSelectionManager.Instance.allUnitsList.Add(this.gameObject);
-
-        //AssignCommands();
+        UnitManager.Instance.allUnits.Add(this.gameObject);
+        foreach (var command in commands)
+        {
+            command.CommandInitialize(this);
+            if (!commandsDict.ContainsKey(command.abilityName))
+                commandsDict.Add(command.abilityName, command);
+        }
     }
 
     protected virtual void Update()
     {
         if (activeCommand == null)
         {
-            if (queue.Count > 0)
+            if (queue.Count == 0)
             {
-                NextCommand();
+                activeCommand = GenerateCommand("Idle");
             }
             else
             {
-                activeCommand = GetCommand("IdleCommand");
+                NextCommand();
             }
         }
-
         if (activeCommand.Execute())
             NextCommand();
     }
     private void OnDestroy()
     {
-        UnitSelectionManager.Instance.allUnitsList.Remove(gameObject);
+        UnitManager.Instance.allUnits.Remove(gameObject);
+    }
+
+    public Command GenerateCommand(string Name)
+    {
+        if (!commandsDict.ContainsKey(Name))
+            return null;
+        return commandsDict[Name].Duplicate();
     }
 
     //Issue Commands
 
-    protected void OverrideCommand(Command command)
+    public void OverrideCommand(Command command)
     {
-        queue.Clear();
+        if (activeCommand.CanBeInterupted())
+        {
+            activeCommand = command;
+            queue.Clear();
+        }
+        else
+        {
+            queue.Clear();
+            AddCommand(command);
+        }
+    }
+
+    public void AddCommand(Command command)
+    {
         queue.Enqueue(command);
     }
 
-    protected void EnqueueCommand(Command command)
+    public void InsertCommand(Command insertion)
     {
-        queue.Enqueue(command);
-    }
-
-    protected void ReplaceCommand(Command replacementCommand)
-    {
-        queue.Dequeue();
-        queue.Enqueue(replacementCommand);
+        queue.Enqueue(activeCommand); 
 
         for (int i = 1; i < queue.Count; i++)
         {
@@ -70,9 +89,14 @@ public abstract class Selectable : MonoBehaviour
         }
     }
 
+    public void InterruptCommand(Command interuption)
+    {
+        InsertCommand(activeCommand);
+        activeCommand = interuption;
+    }
+
     protected void NextCommand()
     {
-        Destroy(activeCommand);
         activeCommand = queue.Dequeue();
     }
 
@@ -98,58 +122,4 @@ public abstract class Selectable : MonoBehaviour
         GameObject targetObject = unit.transform.GetChild(0).gameObject;
         targetObject.SetActive(!targetObject.activeSelf);
     }
-
-    //Command Dictionary
-    protected Command GetCommand(string commandName)
-    {
-        return (Command)gameObject.AddComponent(commands[commandName].GetType());
-    }
-
-    public void AddCommand(string name, Command command)
-    {
-        if (commands.ContainsKey(name))
-        {
-            commands[name] = command;
-            Debug.Log("Command Override");
-        }
-        else
-        {
-            commands.Add(name, command);
-        }
-    }
-    
-    //Input Manager
-
-    protected abstract class InputManager
-    {
-        static Camera cam;
-        static Vector3 mousePosition;
-        protected static RaycastHit hit;
-
-        protected static LayerMask ground = LayerMask.GetMask("Ground");
-        protected static LayerMask selectable = LayerMask.GetMask("Selectable");
-
-        protected static bool shift = false;
-
-        protected static void Update()
-        {
-            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-            Physics.Raycast(ray, out hit, Mathf.Infinity, ground | selectable);
-        }
-        public virtual void CheckInput()
-        {
-            GetInput();
-        }
-        public void GetInput()
-        {
-            shift = Input.GetKeyDown(KeyCode.LeftShift);
-        }
-    }
-
-    public void CheckInput()
-    {
-        inputManager.CheckInput();
-    }
-
-
 }
