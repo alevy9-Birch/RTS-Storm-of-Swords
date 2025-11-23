@@ -31,7 +31,8 @@ public class Command : ScriptableObject
 
     public virtual Command Duplicate()
     {
-        Command copy = (Command)Activator.CreateInstance(this.GetType());
+        Command copy = (Command)ScriptableObject.CreateInstance(this.GetType());
+        //(Command)Activator.CreateInstance(this.GetType());
         CopyTo(copy);
         return copy;
     }

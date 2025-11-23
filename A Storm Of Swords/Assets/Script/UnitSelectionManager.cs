@@ -7,10 +7,7 @@ public class UnitSelectionManager : MonoBehaviour
 
     public List<GameObject> unitsSelected = new List<GameObject>();
 
-    public LayerMask ground;
-    public LayerMask selectable;
-
-    private Camera cam;
+    public Camera cam;
 
     [Range(0, UnitManager.maxPlayers)]
     public byte myID;
@@ -23,7 +20,6 @@ public class UnitSelectionManager : MonoBehaviour
     Vector3 worldStartPos;
     Vector2 startPosition;
     Vector2 endPosition;
-
 
     public void Awake()
     {
@@ -51,7 +47,7 @@ public class UnitSelectionManager : MonoBehaviour
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
-            if (Physics.Raycast(ray, out hit, Mathf.Infinity, ground))
+            if (Physics.Raycast(ray, out hit, Mathf.Infinity, UnitManager.Instance.ground))
             {
                 worldStartPos = hit.point;
             }
@@ -88,7 +84,7 @@ public class UnitSelectionManager : MonoBehaviour
         Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 
         //If we are clicking clickable object
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, selectable))
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, UnitManager.Instance.selectable))
         {
             if (Input.GetKey(KeyCode.LeftShift))
             {
@@ -223,6 +219,16 @@ public class UnitSelectionManager : MonoBehaviour
                 UnitSelectionManager.LocalInstance.DragSelect(unit);
             }
         }
+    }
+
+    public bool CanFollow()
+    {
+        return unitsSelected.Count >= 1;
+    }
+    
+    public Vector3 FollowPostion()
+    {
+        return unitsSelected[0].transform.position;
     }
 }
 

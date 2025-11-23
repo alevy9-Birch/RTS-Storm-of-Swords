@@ -1,12 +1,8 @@
-using System;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
-public abstract class Selectable : MonoBehaviour
+public class Selectable : MonoBehaviour
 {
-    public short teamNum;
-
     [SerializeField]
     public List<Command> commands = new List<Command>();
     protected Dictionary<string, Command> commandsDict = new();
@@ -15,7 +11,13 @@ public abstract class Selectable : MonoBehaviour
     protected Selectable selectable;
 
     protected InputManager inputManager;
-    public Byte teamID;
+    public byte teamID;
+
+    [Header("Gizmos")]
+    public bool DrawGizmos = false;
+    private float gizmoRange = -1f;
+    private Color gizmoColor = Color.white;
+
 
     //Start & Update
 
@@ -121,5 +123,44 @@ public abstract class Selectable : MonoBehaviour
     {
         GameObject targetObject = unit.transform.GetChild(0).gameObject;
         targetObject.SetActive(!targetObject.activeSelf);
+    }
+
+    public List<Selectable> SelectablesInRange(float range, bool mine = false, bool ally = false, bool neutral = false, bool hostile = false)
+    {
+        List<Selectable> result = new List<Selectable>();
+        var hits = Physics2D.OverlapCircleAll(transform.position, range, UnitManager.Instance.selectable);
+
+        //Gizmo
+        if (mine) gizmoColor = Color.cyan;
+        else if (ally) gizmoColor = Color.green;
+        else if (neutral) gizmoColor = Color.white;
+        else if (hostile) gizmoColor = Color.red;
+        else gizmoColor = Color.yellow;
+        gizmoRange = range;
+
+        //Logic
+        foreach (var h in hits)
+        {
+            Selectable selectable = h.GetComponent<Selectable>();
+            if (selectable == null) continue;
+
+            if (selectable.teamID == UnitSelectionManager.LocalInstance.myID && mine)
+                result.Add(selectable);
+            else if (ally && UnitManager.IsAllied(teamID, selectable.teamID))
+                result.Add(selectable);
+            else if (neutral && UnitManager.IsNeutral(teamID, selectable.teamID))
+                result.Add(selectable);
+            else if (hostile && UnitManager.IsEnemy(teamID, selectable.teamID))
+                result.Add(selectable);
+        }
+        return result;
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!DrawGizmos) return;
+
+        Gizmos.color = gizmoColor;
+        Gizmos.DrawWireSphere(transform.position, gizmoRange);
     }
 }

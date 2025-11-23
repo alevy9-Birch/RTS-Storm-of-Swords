@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 3126865359942683003}
   - component: {fileID: 3124648829575628553}
   - component: {fileID: 2558245447333536756}
+  - component: {fileID: 8893854390397587406}
   - component: {fileID: 7845108799507248190}
   - component: {fileID: 8392542616575483059}
   m_Layer: 7
@@ -116,6 +117,33 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!54 &8893854390397587406
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5598128473339593825}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 1
+  m_AngularDamping: 1
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 112
+  m_CollisionDetection: 0
 --- !u!195 &7845108799507248190
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -153,13 +181,12 @@ MonoBehaviour:
   teamNum: 0
   commands:
   - {fileID: 11400000, guid: 002ee864186231b43be43a25ffa752a1, type: 2}
-  myTeam: 0
+  teamID: 0
   speed: 1
   followRange: 10
   attackInRange: 2.5
   attackOutOfRange: 3
   teamNumber: 0
-  drawGizmos: 0
 --- !u!1 &6366256140485097562
 GameObject:
   m_ObjectHideFlags: 0

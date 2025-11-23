@@ -6,7 +6,7 @@ public class RTSCameraController : MonoBehaviour
     public static RTSCameraController instance;
 
     [Header("General")]
-    public Transform followTransform;
+    public bool followSelection;
     Vector3 newPosition;
     Vector3 dragStartPosition;
     Vector3 dragCurrentPosition;
@@ -31,7 +31,6 @@ public class RTSCameraController : MonoBehaviour
     public Texture2D cursorArrowLeft;
     public Texture2D cursorArrowRight;
 
-    public Vector2 mapBounds;
     CursorArrow currentCursor = CursorArrow.DEFAULT;
     enum CursorArrow
     {
@@ -53,23 +52,11 @@ public class RTSCameraController : MonoBehaviour
 
     private void Update()
     {
-        // Allow Camera to follow Target
-        if (followTransform != null)
+        if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.F))
         {
-            transform.position = followTransform.position;
+            followSelection = !followSelection;
         }
-        // Let us control Camera
-        else
-        {
-            HandleCameraMovement();
-        }
-
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            followTransform = null;
-        }
-
-        transform.position = new Vector3(Mathf.Clamp(transform.position.x, -mapBounds.x, mapBounds.x), transform.position.y, Mathf.Clamp(transform.position.z, -mapBounds.y, mapBounds.y));
+        HandleCameraMovement();
     }
 
     void HandleCameraMovement()
@@ -92,19 +79,19 @@ public class RTSCameraController : MonoBehaviour
                 movementSpeed = normalSpeed;
             }
 
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
+            if (Input.GetKey(KeyCode.UpArrow))
             {
                 newPosition += (transform.forward * movementSpeed);
             }
-            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
+            if (Input.GetKey(KeyCode.DownArrow))
             {
                 newPosition += (transform.forward * -movementSpeed);
             }
-            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
+            if (Input.GetKey(KeyCode.RightArrow))
             {
                 newPosition += (transform.right * movementSpeed);
             }
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
+            if (Input.GetKey(KeyCode.LeftArrow))
             {
                 newPosition += (transform.right * -movementSpeed);
             }
@@ -155,9 +142,22 @@ public class RTSCameraController : MonoBehaviour
             }
         }
 
-        transform.position = Vector3.Lerp(transform.position, newPosition, Time.deltaTime * movementSensitivity);
+        //Check Map Bounds
+        Vector3 center = MapBounds.Instance.transform.position;
+        Vector2 size = MapBounds.Instance.mapBounds;
 
-        Cursor.lockState = CursorLockMode.Confined; // If we have an extra monitor we don't want to exit screen bounds
+        if (followSelection && UnitSelectionManager.LocalInstance.CanFollow()) //Follow is On
+            newPosition = UnitSelectionManager.LocalInstance.FollowPostion();
+
+        newPosition = new Vector3(
+            Mathf.Clamp(newPosition.x, center.x - size.x, center.x + size.x),
+            newPosition.y,
+            Mathf.Clamp(newPosition.z, center.z - size.y, center.z + size.y)
+        );
+
+        //Move Camera
+        transform.position = Vector3.Lerp(transform.position, newPosition, Time.deltaTime * movementSensitivity);
+        Cursor.lockState = CursorLockMode.Confined;
     }
 
     private void ChangeCursor(CursorArrow newCursor)
@@ -218,12 +218,5 @@ public class RTSCameraController : MonoBehaviour
                 newPosition = transform.position + dragStartPosition - dragCurrentPosition;
             }
         }
-    }
-
-    private void OnDrawGizmos()
-    {
-        float mapHeight = 100;
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireCube(Vector3.up * mapHeight/2, new Vector3(mapBounds.x, mapHeight, mapBounds.y));
     }
 }
