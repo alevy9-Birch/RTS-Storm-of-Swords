@@ -146,8 +146,8 @@ public class RTSCameraController : MonoBehaviour
         Vector3 center = MapBounds.Instance.transform.position;
         Vector2 size = MapBounds.Instance.mapBounds;
 
-        if (followSelection && UnitSelectionManager.LocalInstance.CanFollow()) //Follow is On
-            newPosition = UnitSelectionManager.LocalInstance.FollowPostion();
+        if (followSelection && Player.PlayerInstance.canFollow) //Follow is On
+            newPosition = Player.PlayerInstance.followPosition;
 
         newPosition = new Vector3(
             Mathf.Clamp(newPosition.x, center.x - size.x, center.x + size.x),

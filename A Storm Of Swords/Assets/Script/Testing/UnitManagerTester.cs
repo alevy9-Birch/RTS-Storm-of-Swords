@@ -23,21 +23,25 @@ public class UnitManagerTester : MonoBehaviour
         if (SetAllies)
         {
             UnitManager.SetRelation(teamA, teamB, 1);
+            UnitManager.RecalculateTeamColors();
             SetAllies = false;
         }
         if (SetNeutral)
         {
             UnitManager.SetRelation(teamA, teamB, 0);
+            UnitManager.RecalculateTeamColors();
             SetNeutral = false;
         }
         if (SetEnemies)
         {
             UnitManager.SetRelation(teamA, teamB, -1);
+            UnitManager.RecalculateTeamColors();
             SetEnemies = false;
         }
         if (PrintRelation)
         {
             Debug.Log(UnitManager.GetRelation(teamA, teamB));
+            UnitManager.RecalculateTeamColors();
             PrintRelation = false;
         }
 

@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class UnitSelectionManager : MonoBehaviour
 {
-    public static UnitSelectionManager LocalInstance { get; set; }
+    /*public static UnitSelectionManager LocalInstance { get; set; }
 
     public List<GameObject> unitsSelected = new List<GameObject>();
 
@@ -12,8 +12,7 @@ public class UnitSelectionManager : MonoBehaviour
     [Range(0, UnitManager.maxPlayers)]
     public byte myID;
 
-    [SerializeField]
-    RectTransform boxVisual;
+    public RectTransform boxVisual;
 
     Rect selectionBox;
 
@@ -230,5 +229,6 @@ public class UnitSelectionManager : MonoBehaviour
     {
         return unitsSelected[0].transform.position;
     }
+    */
 }
 

@@ -7,10 +7,15 @@ public class Selectable : MonoBehaviour
     public List<Command> commands = new List<Command>();
     protected Dictionary<string, Command> commandsDict = new();
     public Queue<Command> queue = new();
-    private Command activeCommand;
+    public Command activeCommand;
     protected Selectable selectable;
+    public Transform selectionIndicators;
+    private const float SelectionIndicatorsRotateSpeed = 25f;
 
-    protected InputManager inputManager;
+    public Command defaultIdle;
+    public Command defaultRightClick;
+
+    [Range(0, UnitManager.maxPlayers - 1)]
     public byte teamID;
 
     [Header("Gizmos")]
@@ -30,24 +35,39 @@ public class Selectable : MonoBehaviour
             if (!commandsDict.ContainsKey(command.abilityName))
                 commandsDict.Add(command.abilityName, command);
         }
+
+        /*foreach (var command in commandsDict.Keys)
+        {
+            Debug.Log(command + " " + commandsDict[command]);
+        }*/
+
+        InitializeSelectionIndicators();
     }
 
     protected virtual void Update()
     {
+        selectionIndicators.Rotate(transform.up, Time.deltaTime * SelectionIndicatorsRotateSpeed);
+        //Testing
+        InitializeSelectionIndicators();
+
         if (activeCommand == null)
         {
             if (queue.Count == 0)
             {
-                activeCommand = GenerateCommand("Idle");
+                DefaultIdle();
             }
             else
             {
                 NextCommand();
             }
         }
-        if (activeCommand.Execute())
-            NextCommand();
     }
+
+    protected void DefaultIdle()
+    {
+        activeCommand = GenerateCommand(defaultIdle);
+    }
+
     private void OnDestroy()
     {
         UnitManager.Instance.allUnits.Remove(gameObject);
@@ -55,30 +75,58 @@ public class Selectable : MonoBehaviour
 
     public Command GenerateCommand(string Name)
     {
-        if (!commandsDict.ContainsKey(Name))
+        if (commandsDict.ContainsKey(Name))
+        {
+            return commandsDict[Name].Duplicate();
+        }
+        else
+        {
             return null;
-        return commandsDict[Name].Duplicate();
+        }
     }
+
+    public Command GenerateCommand(Command command)
+    {
+        if (command == null) return null;
+        return command.Duplicate();
+    }
+
+
 
     //Issue Commands
 
     public void OverrideCommand(Command command)
     {
-        if (activeCommand.CanBeInterupted())
-        {
-            activeCommand = command;
-            queue.Clear();
-        }
-        else
+        if (activeCommand.uninteruptable)
         {
             queue.Clear();
             AddCommand(command);
+        }
+        else
+        {
+            activeCommand = command;
+            queue.Clear();
         }
     }
 
     public void AddCommand(Command command)
     {
         queue.Enqueue(command);
+    }
+
+    public bool ContainsCommand(string name)
+    {
+        return commandsDict.ContainsKey(name);
+    }
+
+    public Command GetCommand(string name)
+    {
+        return commandsDict[name];
+    }
+
+    public Command GetCommand(Command command)
+    {
+        return commandsDict[command.name];
     }
 
     public void InsertCommand(Command insertion)
@@ -97,9 +145,14 @@ public class Selectable : MonoBehaviour
         activeCommand = interuption;
     }
 
-    protected void NextCommand()
+    public void NextCommand()
     {
-        activeCommand = queue.Dequeue();
+        if (queue.Count > 0)
+        {
+            activeCommand = queue.Dequeue();
+        }
+        else
+            DefaultIdle();
     }
 
     protected void NewPriorityCommand(Command newPriorityCommand)
@@ -114,16 +167,23 @@ public class Selectable : MonoBehaviour
 
     //Selection Indicator
 
-    public static void TriggerSelectionIndicator(GameObject unit, bool isVisible)
+    public void SetSelectionIndicator(bool isVisible)
     {
-        unit.transform.GetChild(0).gameObject.SetActive(isVisible);
+        selectionIndicators.GetChild(0).gameObject.SetActive(isVisible);
     }
 
-    public static void ToggleSelectionIndicator(GameObject unit)
+    public void SetHoverIndicator(bool isVisible)
     {
-        GameObject targetObject = unit.transform.GetChild(0).gameObject;
-        targetObject.SetActive(!targetObject.activeSelf);
+        selectionIndicators.GetChild(1).gameObject.SetActive(isVisible);
     }
+
+    public void InitializeSelectionIndicators()
+    {
+        selectionIndicators.GetChild(0).GetComponent<MeshRenderer>().material = UnitManager.Instance.GetMat(teamID, "UnitSelectionCircle"); 
+        selectionIndicators.GetChild(1).GetComponent<MeshRenderer>().material = UnitManager.Instance.GetMat(teamID, "UnitSelectionBorder");
+    }
+
+    //Commands Interface
 
     public List<Selectable> SelectablesInRange(float range, bool mine = false, bool ally = false, bool neutral = false, bool hostile = false)
     {
@@ -144,7 +204,7 @@ public class Selectable : MonoBehaviour
             Selectable selectable = h.GetComponent<Selectable>();
             if (selectable == null) continue;
 
-            if (selectable.teamID == UnitSelectionManager.LocalInstance.myID && mine)
+            if (mine && UnitManager.IsAllied(teamID, selectable.teamID))
                 result.Add(selectable);
             else if (ally && UnitManager.IsAllied(teamID, selectable.teamID))
                 result.Add(selectable);
@@ -155,6 +215,10 @@ public class Selectable : MonoBehaviour
         }
         return result;
     }
+
+    
+
+    //Gizmo
 
     private void OnDrawGizmos()
     {

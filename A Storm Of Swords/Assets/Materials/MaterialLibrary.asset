@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b94345818016bf4d970c585487ce00f, type: 3}
+  m_Name: MaterialLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::MaterialLibrary
+  matPairs:
+  - name: UnitSelectionBorder
+    value: {fileID: 2100000, guid: 382f77ab87cf154498db6d76c6f54955, type: 2}
+  - name: UnitSelectionCircle
+    value: {fileID: 2100000, guid: 5fbda63cc4a288b43b3b60fbf9338d0c, type: 2}
+  - name: Unit
+    value: {fileID: 2100000, guid: 5e9c277ebb868c64a82b7382683d9879, type: 2}

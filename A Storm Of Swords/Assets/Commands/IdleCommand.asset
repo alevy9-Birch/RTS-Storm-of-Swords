@@ -13,4 +13,17 @@ MonoBehaviour:
   m_Name: IdleCommand
   m_EditorClassIdentifier: Assembly-CSharp::Idle
   abilityName: Idle
-  test: 0
+  keyboardShortcut: 0
+  singleUnitCommand: 0
+  instantApplication: 0
+  hasCooldown: 0
+  cooldownLength: 0
+  cooldownTime: 0
+  needsTargeting: 0
+  targetsUnits: 0
+  targetsMine: 0
+  targetAllied: 0
+  targetNeutral: 0
+  targetEnemies: 0
+  targetsLocation: 0
+  uninteruptable: 0
