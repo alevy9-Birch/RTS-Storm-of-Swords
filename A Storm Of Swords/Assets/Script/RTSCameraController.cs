@@ -30,6 +30,7 @@ public class RTSCameraController : MonoBehaviour
     public Texture2D cursorArrowDown;
     public Texture2D cursorArrowLeft;
     public Texture2D cursorArrowRight;
+    public Texture2D cursorSelectArrow;
 
     CursorArrow currentCursor = CursorArrow.DEFAULT;
     enum CursorArrow
@@ -38,7 +39,8 @@ public class RTSCameraController : MonoBehaviour
         DOWN,
         LEFT,
         RIGHT,
-        DEFAULT
+        DEFAULT,
+        Target
     }
 
     private void Start()
@@ -48,6 +50,7 @@ public class RTSCameraController : MonoBehaviour
         newPosition = transform.position;
 
         movementSpeed = normalSpeed;
+        Cursor.SetCursor(cursorDefaultArrow, Vector2.one * 64, CursorMode.Auto);
     }
 
     private void Update()
@@ -55,6 +58,13 @@ public class RTSCameraController : MonoBehaviour
         if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.F))
         {
             followSelection = !followSelection;
+        }
+        if (!isCursorSet)
+        {
+            if (Player.PlayerInstance.hit.collider != null && Player.PlayerInstance.IsInLayerMask(Player.PlayerInstance.hit.collider.gameObject, Player.PlayerInstance.groundMask))
+                Cursor.SetCursor(cursorDefaultArrow, Vector2.one * 64, CursorMode.Auto);
+            else
+                Cursor.SetCursor(cursorSelectArrow, Vector2.one * 64, CursorMode.Auto);
         }
         HandleCameraMovement();
     }
@@ -100,9 +110,15 @@ public class RTSCameraController : MonoBehaviour
         // Edge Scrolling
         if (moveWithEdgeScrolling)
         {
+            // Targeting Command
+            if (Player.PlayerInstance.targetingCommand != null)
+            {
+                ChangeCursor(CursorArrow.Target);
+                isCursorSet = true;
+            }
 
             // Move Right
-            if (Input.mousePosition.x > Screen.width - edgeSize)
+            else if (Input.mousePosition.x > Screen.width - edgeSize)
             {
                 newPosition += (transform.right * movementSpeed);
                 ChangeCursor(CursorArrow.RIGHT);
@@ -168,16 +184,19 @@ public class RTSCameraController : MonoBehaviour
             switch (newCursor)
             {
                 case CursorArrow.UP:
-                    Cursor.SetCursor(cursorArrowUp, new Vector2(cursorArrowUp.width, cursorArrowUp.height), CursorMode.Auto);
+                    Cursor.SetCursor(cursorArrowUp, Vector2.one * 64, CursorMode.Auto);
                     break;
                 case CursorArrow.DOWN:
-                    Cursor.SetCursor(cursorArrowDown, new Vector2(cursorArrowDown.width, cursorArrowDown.height), CursorMode.Auto);
+                    Cursor.SetCursor(cursorArrowDown, Vector2.one * 64, CursorMode.Auto);
                     break;
                 case CursorArrow.LEFT:
-                    Cursor.SetCursor(cursorArrowLeft, new Vector2(cursorArrowLeft.width, cursorArrowLeft.height), CursorMode.Auto);
+                    Cursor.SetCursor(cursorArrowLeft, Vector2.one * 64, CursorMode.Auto);
                     break;
                 case CursorArrow.RIGHT:
-                    Cursor.SetCursor(cursorArrowRight, new Vector2(cursorArrowRight.width, cursorArrowRight.height), CursorMode.Auto);
+                    Cursor.SetCursor(cursorArrowRight, Vector2.one * 64, CursorMode.Auto);
+                    break;
+                case CursorArrow.Target:
+                    Cursor.SetCursor(Player.PlayerInstance.targetingCommand.cursor, Vector2.one * 64, CursorMode.Auto);
                     break;
                 case CursorArrow.DEFAULT:
                     Cursor.SetCursor(cursorDefaultArrow, Vector2.one * 64, CursorMode.Auto);
@@ -214,7 +233,7 @@ public class RTSCameraController : MonoBehaviour
             if (plane.Raycast(ray, out entry))
             {
                 dragCurrentPosition = ray.GetPoint(entry);
-
+                if (Player.PlayerInstance)
                 newPosition = transform.position + dragStartPosition - dragCurrentPosition;
             }
         }

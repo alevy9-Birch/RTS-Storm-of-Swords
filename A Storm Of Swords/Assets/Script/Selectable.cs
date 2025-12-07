@@ -47,8 +47,6 @@ public class Selectable : MonoBehaviour
     protected virtual void Update()
     {
         selectionIndicators.Rotate(transform.up, Time.deltaTime * SelectionIndicatorsRotateSpeed);
-        //Testing
-        InitializeSelectionIndicators();
 
         if (activeCommand == null)
         {
@@ -60,6 +58,10 @@ public class Selectable : MonoBehaviour
             {
                 NextCommand();
             }
+        }
+        else
+        {
+            activeCommand.NextFrame();
         }
     }
 
@@ -91,12 +93,11 @@ public class Selectable : MonoBehaviour
         return command.Duplicate();
     }
 
-
-
     //Issue Commands
 
     public void OverrideCommand(Command command)
     {
+        command.selectable = this;
         if (activeCommand.uninteruptable)
         {
             queue.Clear();
@@ -111,6 +112,7 @@ public class Selectable : MonoBehaviour
 
     public void AddCommand(Command command)
     {
+        command.selectable = this;
         queue.Enqueue(command);
     }
 
@@ -126,7 +128,7 @@ public class Selectable : MonoBehaviour
 
     public Command GetCommand(Command command)
     {
-        return commandsDict[command.name];
+        return commandsDict[command.abilityName];
     }
 
     public void InsertCommand(Command insertion)

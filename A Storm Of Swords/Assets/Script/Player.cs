@@ -1,9 +1,6 @@
-using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
-using UnityEditor;
 using UnityEngine;
-using static UnityEditor.FilePathAttribute;
+using UnityEngine.UI;
 
 //This Script is a merging of Input Manager and UnitSelectionManager
 public class Player : MonoBehaviour
@@ -13,24 +10,25 @@ public class Player : MonoBehaviour
     [Header("References")]
     public Camera cam;
     Vector3 mousePosition;
-    protected RaycastHit hit;
+    public RaycastHit hit;
 
     public LayerMask groundMask;
     public LayerMask selectableMask;
 
-    protected bool shift = false;
     protected Coroutine activeInputs;
+
+    [Range(10f, 50f)]
+    public float boxMin = 10;
 
     [Header("Player Specific")]
 
-    [Range(0, UnitManager.maxPlayers)]
+    [Range(0, UnitManager.maxPlayers - 1)]
     public byte myID;
     public List<Selectable> selectedUnits = new List<Selectable>();
-    private List<Selectable> hoveredUnits = new List<Selectable>();
+    public List<Selectable> hoveredUnits = new List<Selectable>();
     bool controllable = true;
 
-    private Command repeatCommand = null;
-    private Command targetingCommand = null;
+    public Command targetingCommand = null;
 
     [Header("Visuals")]
     public RectTransform boxVisual;
@@ -61,7 +59,11 @@ public class Player : MonoBehaviour
 
         Ray ray = cam.ScreenPointToRay(mousePosition);
         Physics.Raycast(ray, out hit, Mathf.Infinity, groundMask | selectableMask);
-        if (hit.collider == null) return;
+        if (hit.collider == null)
+        {
+            Debug.Log("Mouse Hits Nothing");
+            return;
+        }
 
         canFollow = selectedUnits.Count > 0;
         if (canFollow) followPosition = selectedUnits[0].transform.position;
@@ -74,43 +76,43 @@ public class Player : MonoBehaviour
     void TargetCommand()
     {
         DrawVisual(false);
-        if (!Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (IsInLayerMask(hit.collider.gameObject, selectableMask))
+            {
+                if (targetingCommand.SetTarget(hit.collider.gameObject.GetComponent<Selectable>())) HandleCommand(targetingCommand);
+            }
+            else if (IsInLayerMask(hit.collider.gameObject, groundMask))
+            {
+                if (targetingCommand.SetTarget(hit.point)) HandleCommand(targetingCommand);
+            }
+            else
+            {
+                CancelTargeting();
+            }
+        }
+        else
         {
             //Cancel Targetting
-            if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape) || (repeatCommand == null && Input.GetKeyUp(KeyCode.LeftShift))) CancelTargeting();
-            if (Input.GetKeyDown(KeyCode.LeftShift)) repeatCommand = null;
-        }
-
-        if (IsInLayerMask(hit.collider.gameObject, selectableMask))
-        {
-            if (targetingCommand.SetTarget(hit.point)) HandleCommand(targetingCommand);
-        }
-        else if (IsInLayerMask(hit.collider.gameObject, groundMask))
-        {
-            if (targetingCommand.SetTarget(hit.point)) HandleCommand(targetingCommand);
-        }
-        else
-        {
-            CancelTargeting();
+            if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyUp(KeyCode.LeftShift)) CancelTargeting();
         }
     }
 
-    void CallCommand(Command command) //For the First Time a Command is Called
+    void CallCommand(Command command, bool preset = false) //For the First Time a Command is Called
     {
-        if (command.needsTargeting)
+        if (preset)
         {
-            targetingCommand = command;
-            if (Input.GetKey(KeyCode.LeftShift)) repeatCommand = command;
+            targetingCommand = null;
+            if (IsInLayerMask(hit.collider.gameObject, selectableMask))
+            {
+                if (command.SetTarget(hit.collider.gameObject.GetComponent<Selectable>())) HandleCommand(command, preset);
+            }
+            else if (IsInLayerMask(hit.collider.gameObject, groundMask))
+            {
+                if (command.SetTarget(hit.point)) HandleCommand(command, preset);
+            }
         }
-        else
-        {
-            HandleCommand(command);
-        }
-    }
-
-    void RecallCommand(Command command) //For when shift is held and a command is called
-    {
-        if (command.needsTargeting)
+        else if (command.needsTargeting)
         {
             targetingCommand = command;
         }
@@ -120,53 +122,72 @@ public class Player : MonoBehaviour
         }
     }
 
-    void HandleCommand(Command command)
+    void HandleCommand(Command command, bool preset = false)
     {
-        foreach (Selectable selectable in selectedUnits)
+        foreach (Selectable selectable in selectedUnits.ToArray())
         {
-            if (selectable.ContainsCommand(command.name) && selectable.GetCommand(command.name).Available())
+            if (selectable == null)
+            {
+                selectedUnits.Remove(selectable);
+                continue;
+            }
+
+            Command newCommand = selectable.GenerateCommand(command.abilityName);
+            if (newCommand != null)
             {
                 if (command.instantApplication) command.Execute();
                 
                 if (command.needsTargeting)
                 {
                     targetingCommand = null;
-                    if (repeatCommand != null) CallCommand(repeatCommand.Duplicate());
-                    else if (Input.GetKey(KeyCode.LeftShift)) RecallCommand(command.Duplicate());
                 }
 
                 if (Input.GetKey(KeyCode.LeftShift)) selectable.AddCommand(command);
                 else selectable.OverrideCommand(command);
 
-                if (command.singleUnitCommand) break;
+                if (command.singleUnitCommand)
+                {
+                    SelectUnit(selectable, false);
+                    SelectUnit(selectable, true);
+                    break;
+                }
             }
+
+            command.selectable = selectable;
         }
+        if (Input.GetKey(KeyCode.LeftShift) && !preset) CallCommand(command);
     }
 
     void CancelTargeting()
     {
         targetingCommand = null;
-        repeatCommand = null;
-        Debug.Log("Cancelled Command");
+        //Debug.Log("Cancelled Command");
     }
 
     public void DefaultInputs()
     {
-        if (Input.GetMouseButtonDown(0)) worldStartPos = hit.point;
+        Vector2 box = (endPosition - startPosition);
+        bool dragging = Mathf.Abs(box.x) > boxMin || Mathf.Abs(box.y) > boxMin;
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            worldStartPos = hit.point;
+            startPosition = Camera.main.WorldToScreenPoint(worldStartPos);
+        }
 
         if (Input.GetMouseButton(0))
         {
             startPosition = Camera.main.WorldToScreenPoint(worldStartPos);
             endPosition = Input.mousePosition;
-            DrawSelection();
 
-            if ((boxVisual.rect.width > 10 || boxVisual.rect.height > 10))
+
+            if (dragging)
             {
-                DrawVisual();
+                DrawSelection();
+                DrawVisual(true);
+                
                 List<Selectable> inDrag = UnitsInDragSelect();
-
-                Selectable[] tempHoveredUnits = hoveredUnits.ToArray();
-                foreach (Selectable selectable in tempHoveredUnits)
+                foreach (Selectable selectable in hoveredUnits.ToArray())
                 {
                     HoverUnit(selectable, inDrag.Contains(selectable));
                 }
@@ -177,42 +198,36 @@ public class Player : MonoBehaviour
             }
             else
             {
+                ClearHoveredUnits();
                 DrawVisual(false);
-                foreach (Selectable selectable in hoveredUnits)
-                {
-                    HoverUnit(selectable, false);
-                }
-                hoveredUnits.Clear();
+
             }
         }
 
         if (Input.GetMouseButtonUp(0))
         {
-            DrawVisual(false);
-            if ((boxVisual.rect.width > 10 || boxVisual.rect.height > 10))
+            if (dragging)
             {
                 DragSelect();
-                foreach (Selectable selectable in hoveredUnits)
-                {
-                    HoverUnit(selectable, false);
-                }
-                hoveredUnits.Clear();
             }
             else
             {
                 DefaultClick();
             }
 
+            ClearHoveredUnits();
+
             startPosition = Vector2.zero;
             endPosition = Vector2.zero;
-            DrawVisual();
+            DrawVisual(false);
         }
 
         if (controllable && selectedUnits.Count > 0)
         {
-            if (Input.GetMouseButton(1))
+            if (Input.GetMouseButtonDown(1))
             {
-                CallCommand(selectedUnits[0].defaultRightClick);
+                CallCommand(selectedUnits[0].defaultRightClick, true);
+                return;
             }
             foreach (Command command in selectedUnits[0].commands)
             {
@@ -220,12 +235,13 @@ public class Player : MonoBehaviour
                 if (Input.GetKeyDown(command.keyboardShortcut))
                 {
                     CallCommand(command);
+                    return;
                 }
             }
         }
     }
 
-    bool IsInLayerMask(GameObject obj, LayerMask mask)
+    public bool IsInLayerMask(GameObject obj, LayerMask mask)
     {
         return (mask.value & (1 << obj.layer)) != 0;
     }
@@ -243,55 +259,57 @@ public class Player : MonoBehaviour
             bool controlled = UnitManager.IsMine(myID, selectable.teamID);
             bool preselected = selectedUnits.Contains(selectable);
 
-            if (!controlled && !shift)
+            if (!controlled)
             {
-                ClearSelectedUnits();
-                selectedUnits.Add(selectable);
-                controllable = false;
+                if (!shift)
+                {
+                    ClearSelectedUnits();
+                    SelectUnit(selectable);
+                    controllable = false;
+                }
             }
             else
             {
                 if (!controllable) { ClearSelectedUnits(); controllable = true; }
-                Selectable[] tempSelected = selectedUnits.ToArray();
                 switch (ctrl, shift, preselected)
                 {
-                    case (true, true, true):
-                        foreach (Selectable current in tempSelected)
+                    case (true, true, true): //Unselect Type
+                        foreach (Selectable current in selectedUnits.ToArray())
                         {
                             if (selectable.GetType() == current.GetType())
                                 SelectUnit(current, false);
                         }
                         break;
-                    case (true, false, true):
-                        foreach (Selectable current in tempSelected)
+                    case (false, true, true): //Unselect Unit
+                        SelectUnit(selectable, false);
+                        break;
+                    case (true, false, true): //Select Type from Selected
+                        foreach (Selectable current in selectedUnits.ToArray())
                         {
                             if (selectable.GetType() != current.GetType())
                                 SelectUnit(current, false);
                         }
                         break;
-                    case (true, true, false):
+                    case (true, true, false): //Add Type
                         foreach (Selectable current in UnitsOnScreen())
                         {
                             if (selectable.GetType() == current.GetType() && UnitManager.IsMine(myID, current.teamID))
                                 SelectUnit(current);
                         }
                         break;
-                    case (true, false, false):
-                        selectedUnits.Clear();
+                    case (true, false, false): //Select Type
+                        ClearSelectedUnits();
                         foreach (Selectable current in UnitsOnScreen())
                         {
                             if (selectable.GetType() == current.GetType() && UnitManager.IsMine(myID, current.teamID))
                                 SelectUnit(current);
                         }
                         break;
-                    case (false, true, true):
-                        SelectUnit(selectable, false);
-                        break;
-                    case (false, true, false):
+                    case (false, true, false): //Add Unit
                         SelectUnit(selectable);
                         break;
-                    case (false, false, _):
-                        selectedUnits.Clear();
+                    case (false, false, _): //Select Unit
+                        ClearSelectedUnits();
                         SelectUnit(selectable);
                         break;
                 }
@@ -303,25 +321,41 @@ public class Player : MonoBehaviour
     {
         bool shift = Input.GetKey(KeyCode.LeftShift);
         
-        if (!shift && hoveredUnits.Count > 0) ClearSelectedUnits();
-        foreach (Selectable selectable in hoveredUnits)
+        foreach (Selectable selectable in hoveredUnits.ToArray()) //Clear if Shift isn't held and update Controllable
+        {
+            bool controlled = UnitManager.IsMine(myID, selectable.teamID);
+
+            if (!controllable)
+            {
+                if (controlled)
+                {
+                    ClearSelectedUnits();
+                    controllable = true;
+                }
+            }
+            if (controllable)
+            {
+                if (!shift) ClearSelectedUnits();
+                break;
+            }
+        }
+
+        foreach (Selectable selectable in hoveredUnits.ToArray())
         {
             bool controlled = UnitManager.IsMine(myID, selectable.teamID);
 
             switch (shift, controlled)
             {
-                case (true, true):
-                    if (!controllable) { ClearSelectedUnits(); controllable = true; }
+                case (_, false):
+                    HoverUnit(selectable, false);
+                    break;
+                case (true, _):
                     SelectUnit(selectable);
                     HoverUnit(selectable, false);
                     break;
-                case (false, true):
-                    if (!controllable) { ClearSelectedUnits(); break; }
+                case (false, _):
                     SelectUnit(selectable);
                     controllable = true;
-                    break;
-                case (true, false):
-                    HoverUnit(selectable, false);
                     break;
             }
         }
@@ -351,6 +385,8 @@ public class Player : MonoBehaviour
             selectionBox.yMin = startPosition.y;
             selectionBox.yMax = Input.mousePosition.y;
         }
+
+        //Debug.Log(selectionBox.width + " " + selectionBox.height);
     }
 
     List<Selectable> UnitsInDragSelect()
@@ -358,9 +394,20 @@ public class Player : MonoBehaviour
         List<Selectable> list = new List<Selectable>();
         foreach (GameObject unit in UnitManager.Instance.allUnits)
         {
-            if (!UnitManager.IsMine(myID, unit.GetComponent<Selectable>().teamID))
-                continue;
-            if (selectionBox.Contains(cam.WorldToScreenPoint(unit.transform.position)))
+            Bounds b = unit.GetComponent<Collider>().bounds;
+
+            // convert bounds min/max to screen rect
+            Vector3 min = cam.WorldToScreenPoint(b.min);
+            Vector3 max = cam.WorldToScreenPoint(b.max);
+
+            Rect screenRect = Rect.MinMaxRect(
+                Mathf.Min(min.x, max.x),
+                Mathf.Min(min.y, max.y),
+                Mathf.Max(min.x, max.x),
+                Mathf.Max(min.y, max.y)
+            );
+
+            if (selectionBox.Overlaps(screenRect, true))
             {
                 list.Add(unit.GetComponent<Selectable>());
             }
@@ -368,18 +415,30 @@ public class Player : MonoBehaviour
         return list;
     }
 
+    //New Version, needs testing
     List<Selectable> UnitsOnScreen()
     {
         List<Selectable> list = new List<Selectable>();
+
         foreach (GameObject unit in UnitManager.Instance.allUnits)
         {
-            Vector3 vp = cam.WorldToViewportPoint(unit.transform.position);
+            Collider c = unit.GetComponent<Collider>();
+            if (!c) continue;
 
-            if (vp.z > 0f && vp.x > 0f && vp.x < 1f && vp.y > 0f && vp.y < 1f)
-            {
+            Bounds b = c.bounds;
+
+            Vector3 min = cam.WorldToViewportPoint(b.min);
+            Vector3 max = cam.WorldToViewportPoint(b.max);
+
+            bool onScreen =
+                (min.z > 0 || max.z > 0) &&   // in front of camera
+                (max.x >= 0 && min.x <= 1) && // intersects horizontally
+                (max.y >= 0 && min.y <= 1);   // intersects vertically
+
+            if (onScreen)
                 list.Add(unit.GetComponent<Selectable>());
-            }
         }
+
         return list;
     }
 
@@ -387,7 +446,12 @@ public class Player : MonoBehaviour
     private void SelectUnit(Selectable selectable, bool isSelected = true)
     {
         if (isSelected)
-            selectedUnits.Add(selectable);
+        {
+            if (!selectedUnits.Contains(selectable))
+            {
+                selectedUnits.Add(selectable);
+            }
+        }
         else
             selectedUnits.Remove(selectable);
 
@@ -397,7 +461,12 @@ public class Player : MonoBehaviour
     private void HoverUnit(Selectable selectable, bool isHovered = true)
     {
         if (isHovered)
-            hoveredUnits.Add(selectable);
+        {
+            if (!hoveredUnits.Contains(selectable))
+            {
+                hoveredUnits.Add(selectable);
+            }
+        }
         else
             hoveredUnits.Remove(selectable);
 
@@ -406,11 +475,18 @@ public class Player : MonoBehaviour
 
     private void ClearSelectedUnits()
     {
-        foreach(Selectable selectable in selectedUnits)
+        foreach(Selectable selectable in selectedUnits.ToArray())
         {
-            selectable.SetSelectionIndicator(false);
+            SelectUnit(selectable, false);
         }
-        selectedUnits.Clear();
+    }
+
+    private void ClearHoveredUnits()
+    {
+        foreach (Selectable selectable in hoveredUnits.ToArray())
+        {
+            HoverUnit(selectable, false);
+        }
     }
 
     //Visuals
@@ -425,5 +501,11 @@ public class Player : MonoBehaviour
     {
         boxVisual.position = (start + end) / 2;
         boxVisual.sizeDelta = new Vector2(Mathf.Abs(start.x - end.x), Mathf.Abs(start.y - end.y));
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawSphere(hit.point, 1f);
     }
 }

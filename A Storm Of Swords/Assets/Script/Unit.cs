@@ -60,4 +60,21 @@ public class Unit : Selectable
     {
         return agent.remainingDistance;
     }
+    public bool ReachedDestination()
+    {
+        // No path? Not arrived.
+        if (agent.pathPending) return false;
+
+        // If remaining distance is not valid yet
+        if (!agent.hasPath && agent.velocity.sqrMagnitude > 0.01f)
+            return false;
+
+        // Actual arrival condition
+        bool closeEnough = agent.remainingDistance <= agent.stoppingDistance;
+
+        // Velocity check prevents early arrival while still sliding
+        bool notMoving = agent.velocity.sqrMagnitude <= 0.01f;
+
+        return closeEnough && notMoving;
+    }
 }

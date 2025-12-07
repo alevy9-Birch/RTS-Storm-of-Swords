@@ -7,7 +7,7 @@ public abstract class Command : ScriptableObject
 {
     public string abilityName;
     public KeyCode keyboardShortcut;
-    protected Selectable selectable;
+    public Selectable selectable;
 
     [Header("Command Options")]
     public bool singleUnitCommand = false;
@@ -32,11 +32,13 @@ public abstract class Command : ScriptableObject
     [ShowIf("targetsUnits")]
     public bool targetEnemies = false;
     [ShowIf("targetsUnits")]
-    private Selectable targetUnit;
+    protected Selectable targetUnit;
     [ShowIf("needsTargeting")]
     public bool targetsLocation = false;
     [ShowIf("targetsLocation")]
-    private Vector3 targetLocation;
+    protected Vector3 targetLocation;
+    [ShowIf("needsTargeting")]
+    public Texture2D cursor;
 
 
     public bool uninteruptable = false;
@@ -52,7 +54,7 @@ public abstract class Command : ScriptableObject
 
     public void NextFrame()
     {
-        if (firstFrame) { FirstFrame(); }
+        if (firstFrame) { FirstFrame(); firstFrame = false; }
         else { Execute(); }
     }
 
@@ -62,17 +64,22 @@ public abstract class Command : ScriptableObject
         {
             cooldownTime = Time.time + cooldownLength;
         }
+        else
+        {
+            selectable.NextCommand();
+        }
     }
 
     public virtual void Execute()
     {
-        return;
+        Debug.Log("Base Execute");
     }
 
     public Command Duplicate()
     {
         Command copy = Instantiate(this);
         CopyReferences(copy);
+        copy.firstFrame = true;
         return copy;
     }
 

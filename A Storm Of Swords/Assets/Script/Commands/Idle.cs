@@ -5,20 +5,16 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "IdleCommand", menuName = "Commands/Idle")]
 public class Idle : Command
 {
-    public override void Execute()
+    public override void FirstFrame()
     {
-        if (selectable.queue.Count > 0)
-            selectable.NextCommand();
+        base.FirstFrame();
+        if (selectable is Unit)
+        {
+            //((Unit)selectable).MoveTo(selectable.transform.position);
+        }
+        else selectable.NextCommand();
     }
-}
 
-[CreateAssetMenu(fileName = "MoveCommand", menuName = "Commands/Move")]
-public class Move : Command
-{
-    public Vector3 destination;
-    public float speed;
-    public bool flying = false;
-    
     public override void Execute()
     {
         if (selectable.queue.Count > 0)

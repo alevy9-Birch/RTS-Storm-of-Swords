@@ -158,8 +158,8 @@ NavMeshAgent:
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
-  m_AngularSpeed: 120
-  m_StoppingDistance: 0
+  m_AngularSpeed: 360
+  m_StoppingDistance: 0.1
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
@@ -181,8 +181,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   commands:
   - {fileID: 11400000, guid: 002ee864186231b43be43a25ffa752a1, type: 2}
+  - {fileID: 11400000, guid: 532bcda256ae94c429a47fd30fbc94d6, type: 2}
   activeCommand: {fileID: 0}
   selectionIndicators: {fileID: 4207194853504417052}
+  defaultIdle: {fileID: 11400000, guid: 002ee864186231b43be43a25ffa752a1, type: 2}
+  defaultRightClick: {fileID: 11400000, guid: 532bcda256ae94c429a47fd30fbc94d6, type: 2}
   teamID: 0
   DrawGizmos: 0
 --- !u!114 &7872740083787403101
