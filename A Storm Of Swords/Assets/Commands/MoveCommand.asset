@@ -9,11 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: e53c4d285f4911d48b6b60da372715b8, type: 3}
   m_Name: MoveCommand
   m_EditorClassIdentifier: Assembly-CSharp::Move
   abilityName: Move
   keyboardShortcut: 109
+  selectable: {fileID: 0}
   singleUnitCommand: 0
   instantApplication: 0
   hasCooldown: 0
