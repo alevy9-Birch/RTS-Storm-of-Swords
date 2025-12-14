@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -32,7 +33,21 @@ public class RTSCameraController : MonoBehaviour
     public Texture2D cursorArrowRight;
     public Texture2D cursorSelectArrow;
 
+    [Header("Camera Zoom")]
+    public Animator animator;
+    public string stateName = "MyAnimation";
+    public float scrollSensitivity = 0.2f;
+    public float zoomSpeed = 1f;
+    public float targetNormalizedTime = 0f;
+    public float normalizedTime = 0f;
+
     CursorArrow currentCursor = CursorArrow.DEFAULT;
+
+    [Header("Minimap Renderer")]
+    public Camera myCam;
+    public LineRenderer line;
+    public LayerMask cornersMask;
+
     enum CursorArrow
     {
         UP,
@@ -51,6 +66,10 @@ public class RTSCameraController : MonoBehaviour
 
         movementSpeed = normalSpeed;
         Cursor.SetCursor(cursorDefaultArrow, Vector2.one * 64, CursorMode.Auto);
+
+        //Camera Zoom
+        animator.speed = 0f; // pause animator
+        animator.Play(stateName, 0, 0f);
     }
 
     private void Update()
@@ -66,7 +85,49 @@ public class RTSCameraController : MonoBehaviour
             else
                 Cursor.SetCursor(cursorSelectArrow, Vector2.one * 64, CursorMode.Auto);
         }
+
+        HandleCameraZoom();
         HandleCameraMovement();
+    }
+
+    void LateUpdate()//Minimap
+    {
+        if (!myCam) return;
+
+        Vector3[] points = new Vector3[4];
+
+        points[0] = CastCornerRay(0f, 0f); // Bottom Left
+        points[1] = CastCornerRay(1f, 0f); // Bottom Right
+        points[2] = CastCornerRay(1f, 1f); // Top Right
+        points[3] = CastCornerRay(0f, 1f); // Top Left
+
+        // Draw rectangle
+        line.SetPosition(0, points[0]);
+        line.SetPosition(1, points[1]);
+        line.SetPosition(2, points[2]);
+        line.SetPosition(3, points[3]);
+        line.SetPosition(4, points[0]);
+    }
+
+    Vector3 CastCornerRay(float vx, float vy)
+    {
+        Ray ray = myCam.ViewportPointToRay(new Vector3(vx, vy, 0f));
+
+        if (Physics.Raycast(ray, out RaycastHit hit, 5000, cornersMask))
+            return hit.point + Vector3.up * 5;
+        return ray.origin + ray.direction * 5000;
+    }
+
+    void HandleCameraZoom()
+    {
+        float scroll = Input.mouseScrollDelta.y;
+
+        targetNormalizedTime += scroll * scrollSensitivity * Time.deltaTime;
+        targetNormalizedTime = Mathf.Clamp01(targetNormalizedTime);
+        normalizedTime = Mathf.Lerp(normalizedTime, targetNormalizedTime, Time.deltaTime * zoomSpeed);
+
+        animator.Play(stateName, 0, normalizedTime);
+        animator.Update(0f); // force immediate evaluation
     }
 
     void HandleCameraMovement()

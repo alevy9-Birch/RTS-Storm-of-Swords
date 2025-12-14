@@ -276,7 +276,7 @@ public class Player : MonoBehaviour
                     case (true, true, true): //Unselect Type
                         foreach (Selectable current in selectedUnits.ToArray())
                         {
-                            if (selectable.GetType() == current.GetType())
+                            if (selectable.unitType == current.unitType)
                                 SelectUnit(current, false);
                         }
                         break;
@@ -286,14 +286,14 @@ public class Player : MonoBehaviour
                     case (true, false, true): //Select Type from Selected
                         foreach (Selectable current in selectedUnits.ToArray())
                         {
-                            if (selectable.GetType() != current.GetType())
+                            if (selectable.unitType != current.unitType)
                                 SelectUnit(current, false);
                         }
                         break;
                     case (true, true, false): //Add Type
                         foreach (Selectable current in UnitsOnScreen())
                         {
-                            if (selectable.GetType() == current.GetType() && UnitManager.IsMine(myID, current.teamID))
+                            if (selectable.unitType == current.unitType && UnitManager.IsMine(myID, current.teamID))
                                 SelectUnit(current);
                         }
                         break;
@@ -301,7 +301,7 @@ public class Player : MonoBehaviour
                         ClearSelectedUnits();
                         foreach (Selectable current in UnitsOnScreen())
                         {
-                            if (selectable.GetType() == current.GetType() && UnitManager.IsMine(myID, current.teamID))
+                            if (selectable.unitType == current.unitType && UnitManager.IsMine(myID, current.teamID))
                                 SelectUnit(current);
                         }
                         break;

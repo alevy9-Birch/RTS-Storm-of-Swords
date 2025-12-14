@@ -17,5 +17,7 @@ MonoBehaviour:
     value: {fileID: 2100000, guid: 382f77ab87cf154498db6d76c6f54955, type: 2}
   - name: UnitSelectionCircle
     value: {fileID: 2100000, guid: 5fbda63cc4a288b43b3b60fbf9338d0c, type: 2}
-  - name: Unit
+  - name: Unit 1
     value: {fileID: 2100000, guid: 5e9c277ebb868c64a82b7382683d9879, type: 2}
+  - name: Unit 2
+    value: {fileID: 2100000, guid: c72bc33b8f4c7d24f9d8a0004f190107, type: 2}

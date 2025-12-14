@@ -13,6 +13,7 @@ public class MapBounds : MonoBehaviour
     public float mapHeight = 100f;
     public float wallThickness = 1f;
     public Transform[] borderWalls = new Transform[4];
+    public Transform camera;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -62,6 +63,8 @@ public class MapBounds : MonoBehaviour
         // Back wall (negative Z)
         borderWalls[3].position = transform.position + new Vector3(0, mapHeight / 2, -mapBounds.y);
         borderWalls[3].localScale = new Vector3(2 * mapBounds.x, mapHeight, wallThickness);
+
+        camera.position = transform.position + Vector3.up * mapHeight;
     }
 
 

@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class Selectable : MonoBehaviour
 {
+    public string unitType = "Selectable";
+    
     [SerializeField]
     public List<Command> commands = new List<Command>();
     protected Dictionary<string, Command> commandsDict = new();
@@ -46,7 +48,7 @@ public class Selectable : MonoBehaviour
 
     protected virtual void Update()
     {
-        selectionIndicators.Rotate(transform.up, Time.deltaTime * SelectionIndicatorsRotateSpeed);
+        selectionIndicators.GetChild(1).Rotate(transform.up, Time.deltaTime * SelectionIndicatorsRotateSpeed);
 
         if (activeCommand == null)
         {
@@ -183,6 +185,7 @@ public class Selectable : MonoBehaviour
     {
         selectionIndicators.GetChild(0).GetComponent<MeshRenderer>().material = UnitManager.Instance.GetMat(teamID, "UnitSelectionCircle"); 
         selectionIndicators.GetChild(1).GetComponent<MeshRenderer>().material = UnitManager.Instance.GetMat(teamID, "UnitSelectionBorder");
+        selectionIndicators.GetChild(2).GetComponent<SpriteRenderer>().color = UnitManager.Instance.GetTeamColor(teamID);
     }
 
     //Commands Interface

@@ -134,6 +134,11 @@ public class UnitManager : MonoBehaviour
         return materialGroups[teamID].GetMaterial(matName);
     }
 
+    public Color GetTeamColor(byte teamID)
+    {
+        return materialGroups[teamID].myColor;
+    }
+
     [System.Serializable]
     public struct MaterialGroup
     {

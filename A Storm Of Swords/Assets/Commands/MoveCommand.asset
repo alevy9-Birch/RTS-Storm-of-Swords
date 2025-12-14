@@ -19,13 +19,13 @@ MonoBehaviour:
   instantApplication: 0
   hasCooldown: 0
   cooldownLength: 0
-  cooldownTime: 0
+  cooldownTime: 4.9417963
   needsTargeting: 1
-  targetsUnits: 1
+  targetsUnits: 0
   targetsMine: 1
   targetAllied: 1
   targetNeutral: 1
   targetEnemies: 1
-  targetsLocation: 1
+  targetsLocation: 0
   cursor: {fileID: 2800000, guid: fd68136425dd3604499469d818162011, type: 3}
   uninteruptable: 0
