@@ -71,10 +71,14 @@ public class Unit : Selectable
 
         // Actual arrival condition
         bool closeEnough = agent.remainingDistance <= agent.stoppingDistance;
-
+        
+        return closeEnough;
+        
+        /*
         // Velocity check prevents early arrival while still sliding
         bool notMoving = agent.velocity.sqrMagnitude <= 0.01f;
 
         return closeEnough && notMoving;
+        */
     }
 }

@@ -16,6 +16,7 @@ public class Selectable : MonoBehaviour
 
     public Command defaultIdle;
     public Command defaultRightClick;
+    public int queueLength;
 
     [Range(0, UnitManager.maxPlayers - 1)]
     public byte teamID;
@@ -65,11 +66,14 @@ public class Selectable : MonoBehaviour
         {
             activeCommand.NextFrame();
         }
+
+        queueLength = queue.Count;
     }
 
     protected void DefaultIdle()
     {
         activeCommand = GenerateCommand(defaultIdle);
+        activeCommand.selectable = this;
     }
 
     private void OnDestroy()

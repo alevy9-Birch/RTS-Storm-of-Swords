@@ -94,6 +94,7 @@ public abstract class Command : ScriptableObject
 
     public bool SetTarget(Selectable sel)
     {
+        targetLocation = new Vector3();
         if (targetsUnits)
         {
             if (UnitManager.IsMine(selectable.teamID, sel.teamID) && targetsMine)
@@ -112,6 +113,7 @@ public abstract class Command : ScriptableObject
 
     public bool SetTarget(Vector3 targetPosition)
     {
+        targetUnit = null;
         if (targetsLocation)
         {
             targetLocation = targetPosition;
@@ -123,5 +125,7 @@ public abstract class Command : ScriptableObject
     protected virtual void CopyReferences(Command copy)
     {
         copy.selectable = this.selectable;
+        copy.targetLocation = this.targetLocation;
+        copy.targetUnit = this.targetUnit;
     }
 }

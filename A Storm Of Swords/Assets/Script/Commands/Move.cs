@@ -8,8 +8,8 @@ public class Move : Command
         base.FirstFrame();
         if (selectable is Unit)
         {
-            if (targetLocation != null) ((Unit)selectable).MoveTo(targetLocation);
             if (targetUnit != null) ((Unit)selectable).MoveTo(targetUnit.gameObject.transform.position);
+            else ((Unit)selectable).MoveTo(targetLocation);
         }
         else selectable.NextCommand();
     }

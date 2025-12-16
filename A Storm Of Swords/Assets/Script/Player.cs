@@ -73,18 +73,20 @@ public class Player : MonoBehaviour
 
     }
 
-    void TargetCommand()
+    void TargetCommand() //Find Target before Passing to Selectables
     {
         DrawVisual(false);
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonUp(0))
         {
             if (IsInLayerMask(hit.collider.gameObject, selectableMask))
             {
-                if (targetingCommand.SetTarget(hit.collider.gameObject.GetComponent<Selectable>())) HandleCommand(targetingCommand);
+                targetingCommand.SetTarget(hit.collider.gameObject.GetComponent<Selectable>());
+                HandleCommand(targetingCommand);
             }
             else if (IsInLayerMask(hit.collider.gameObject, groundMask))
             {
-                if (targetingCommand.SetTarget(hit.point)) HandleCommand(targetingCommand);
+                targetingCommand.SetTarget(hit.point);
+                HandleCommand(targetingCommand);
             }
             else
             {
@@ -98,7 +100,7 @@ public class Player : MonoBehaviour
         }
     }
 
-    void CallCommand(Command command, bool preset = false) //For the First Time a Command is Called
+    void CallCommand(Command command, bool preset = false) //Call a Command In Player
     {
         if (preset)
         {
@@ -122,8 +124,11 @@ public class Player : MonoBehaviour
         }
     }
 
-    void HandleCommand(Command command, bool preset = false)
+    void HandleCommand(Command command, bool preset = false) //Find All Units In Selection with Command and Assign It
     {
+        worldStartPos = hit.point;
+        startPosition = Camera.main.WorldToScreenPoint(worldStartPos);
+
         foreach (Selectable selectable in selectedUnits.ToArray())
         {
             if (selectable == null)
@@ -135,15 +140,13 @@ public class Player : MonoBehaviour
             Command newCommand = selectable.GenerateCommand(command.abilityName);
             if (newCommand != null)
             {
-                if (command.instantApplication) command.Execute();
-                
-                if (command.needsTargeting)
+                if (command.instantApplication)
                 {
-                    targetingCommand = null;
+                    selectable.InsertCommand(newCommand);
                 }
 
-                if (Input.GetKey(KeyCode.LeftShift)) selectable.AddCommand(command);
-                else selectable.OverrideCommand(command);
+                if (Input.GetKey(KeyCode.LeftShift)) selectable.AddCommand(newCommand);
+                else selectable.OverrideCommand(newCommand);
 
                 if (command.singleUnitCommand)
                 {
@@ -155,7 +158,14 @@ public class Player : MonoBehaviour
 
             command.selectable = selectable;
         }
-        if (Input.GetKey(KeyCode.LeftShift) && !preset) CallCommand(command);
+        if (Input.GetKey(KeyCode.LeftShift) && !preset && command.needsTargeting)
+        {
+            CallCommand(command);
+        }
+        else
+        {
+            targetingCommand = null;
+        }
     }
 
     void CancelTargeting()
